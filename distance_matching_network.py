@@ -3,6 +3,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+class DistanceNetwork(nn.Module):
+    def __init__(self, metric = 'cosine'):
+        super(DistanceNetwork, self).__init__()
+        self.metric = metric
+    
+    def forward(self, support_set, input_image):
+        if self.metric == 'cosine':
+            input_image = input_image.unsqueeze(1)
+            norm_s = F.normalize(support_set, p=2, dim=2)
+            norm_i = F.normalize(input_image, p=2, dim=2)
+            similarities = torch.mm(norm_s, norm_i).sum(dim=2)
+
+        elif metric == 'euclidean':
+            input_image = input_image.unsqueeze(1)
+            similarities = -torch.square(support_set - input_image).sum(dim = 2)
+
+        return similarities
+
 class MetaNetwork(nn.Module):
     def __init__(self):
         super(MetaNetwork, self).__init__()
@@ -116,6 +134,7 @@ class TaskContextEncoder(nn.Module):
 
 class Classifier(nn.Module):
     def __init__(self):
+        super(Classifier, self).__init__()
         self.meta_conv1 = MetaConvolution()
         self.meta_conv2 = MetaConvolution()
 
@@ -164,3 +183,63 @@ class Extractor(nn.Module):
 
         return embeddings
 
+class MetaMatchingNetwork(nn.Module):
+    def __init__(self,\
+        num_classes_per_set=5,\
+        num_samples_per_class =1 
+        ):
+        super(MetaMatchingNetwork, self).__init__()
+        self.Classifier = Classifier()
+        self.tce = TaskContextEncoder()
+        self.extractor = Extractor()
+        self.dn = DistanceNetwork()
+        self.num_classes_per_set = num_classes_per_set
+        self.num_samples_per_class = num_samples_per_class
+        self.softmax = nn.Softmax()
+
+    def forward(self, support_set_images, support_set_labels, target_image, target_label):
+        tensor_list = []
+        b, num_classes, spc = support_set_labels.size()
+
+        support_set_labels_ = support_set_labels.view(b, num_classes * spc)
+        import pdb; pdb.set_trace()
+        support_set_labels_ = support_set_labels_.scatter_(1, support_set_labels_, self.num_classes_per_set)
+
+        b, num_classes, spc, h, w, c= support_set_images.size()
+        support_set_images_ = support_set_images.view(b, num_classes * spc, h, w, c)
+
+        #Zeroth step
+        #Extrace feature embeddings
+        target_image_ = support_set_images.unsqueeze(1)
+        #merge support set and target set in order to share the feature extractros
+        support_target_images = torch.cat(support_set_images_, target_image_)
+
+        support_target_embeddings = self.extractor(support_set_images)
+        #First step: generate task feature representations by using support set features
+        task_contexts = self.tce(support_target_embeddings[:, :-1])
+
+        #Second step: transform images via conditional meta task convolution
+        trans_support_images_list = []
+        trans_target_images_list = []
+        task_gen_wts_list = []
+        for i, (tc, ste) in enumerate(zip(torch.unbind(task_contexts), torch.unbind(support_target_embeddings))):
+            print ("____ In task instance ", i)
+            #support task image embeddings for one task
+            steb, gen_wts_list = self.Classifier(image_embedding = ste, task_context = tc)
+            trans_support_images_list.append(steb[:-1])
+            trans_target_images_list.append(steb[:-1])
+            task_gen_wts_list.append(gen_wts_list)
+        
+        trans_support = torch.stack(trans_support_images_list, 0)
+        trans_target = torch.stack(trans_target_images_list, 0)
+
+        similarities = self.dn(trans_support, trans_target)
+        #Produce pdfs over the support set classes fro the target set image.
+        softmax_similarities = self.softmax(similarities)
+        preds = torch.mm(softmax_similarities.unsqueeze(1), support_set_labels_).squeeze()
+
+        if b == 1:
+            #Reshape to avoid shape error
+            preds = preds.view(b, preds.size()[-1])
+        
+        return preds, target_label
