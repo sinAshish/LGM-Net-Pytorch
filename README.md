@@ -15,6 +15,12 @@ In this work, we propose a novel meta-learning approach for few-shot classificat
 The dataloader is borrowed from the [Author's code](https://github.com/likesiwell/LGM-Net/).
 
 
+## ToDo
+- [x] Implement the model
+- [ ] Prepare the dataset
+- [ ] Train the model
+- [ ] Check the results
+
 ```
-If you find this code useful in your research, please consider citing this repo.
+If you find this code useful in your research, please consider citing the paper by the original authors.
 ```
