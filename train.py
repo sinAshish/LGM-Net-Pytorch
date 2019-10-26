@@ -15,8 +15,9 @@ warnings.filterwarnings('ignore')
 
 def train(train_batches, data, model, optimizer, device):
     total_c_loss = 0.
-    total_accuracy = 0.
-
+    total_c_accuracy = 0.
+    correct = 0
+    iteration = 0
     for i in range(train_batches):
         x_support_set, y_support_set, x_target, y_target = data.get_train_batch(augment=True)
         x_support_set = Variable(x_support_set).to(device)
@@ -26,30 +27,34 @@ def train(train_batches, data, model, optimizer, device):
         preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
 
         #produce predictions for target probablities
-        correct_prediction = torch.argmax(preds, 1) == target_label
-        accuracy = torch.mean(correct_prediction)
-        targets = target_label.scatter_(1, target_label, num_classes_per_set)
+        #import pdb; pdb.set_trace()
+        target_label  = torch.tensor(target_label, dtype= torch.long)
+        #correct_prediction = (torch.argmax(preds, 1) == target_label)
+        _, predicted = torch.max(preds.data, 1)
+        total_train = target_label.size(0)
+        correct += predicted.eq(target_label.data).sum().item()
+
+        accuracy = 100 * correct / total_train
+        #targets = target_label.scatter(1, target_label, classes_per_set)
+        targets = F.one_hot(target_label)
 
         optimizer.zero_grad()
-        loss = F.cross_entropy(targets, preds)
+        loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
         loss.backward()
         optimizer.step()
 
-        total_c_loss += loss.data[0]
+        total_c_loss += loss.item()
         total_c_accuracy += accuracy
-        self.iteration +=1
-        if self.iteration %1500:
-            self.lr*=0.5
-            print ('LR changed to: ', self.lr)
-    
+        iteration +=1
+        
     total_c_loss /= train_batches
-    total_accuracy /=train_batches
-    return total_c_loss, total_accuracy, loss
+    total_c_accuracy /=train_batches
+    return total_c_loss, total_c_accuracy, loss
 
 def validation(val_batches, data, model, optimizer, device):
     total_val_loss = 0.
     total_val_accuracy = 0.
-
+    correct=0.
     for i in range(val_batches):
         x_support_set, y_support_set, x_target, y_target = data.get_val_batch(val_batches)
         x_support_set = Variable(x_support_set).to(device)
@@ -58,13 +63,19 @@ def validation(val_batches, data, model, optimizer, device):
         y_target = Variable(y_target).to(device)
         preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
 
-        #produce predictions for target probablities
-        correct_prediction = torch.argmax(preds, 1) == target_label
-        accuracy = torch.mean(correct_prediction)
-        targets = target_label.scatter_(1, target_label, num_classes_per_set)
+        target_label  = torch.tensor(target_label, dtype= torch.long)
+        #correct_prediction = (torch.argmax(preds, 1) == target_label)
+        _, predicted = torch.max(preds.data, 1)
+        total_val = target_label.size(0)
+        correct += predicted.eq(target_label.data).sum().item()
 
-        loss = F.cross_entropy(targets, preds)
-        val_loss += loss.data[0]
+        accuracy = 100 * correct / total_val
+        #targets = target_label.scatter(1, target_label, classes_per_set)
+        targets = F.one_hot(target_label)
+
+
+        loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
+        val_loss += loss.item()
         val_acc += accuracy
 
     total_val_loss /= val_batches
@@ -75,7 +86,7 @@ def validation(val_batches, data, model, optimizer, device):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--way', type= int, default=5)
+    parser.add_argument('--ways', type= int, default=5)
     parser.add_argument('--shot', type= int, default=1)
     parser.add_argument('--is_test', action= 'store_true')
     parser.add_argument('--lr', type=float, default= 1e-3)

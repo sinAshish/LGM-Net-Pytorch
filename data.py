@@ -19,8 +19,8 @@ def load_miniImageNet():
     """
     print("Loading resized MiniImageNet from jpg images")
     # resizetargetpath = '/home/hy/DataSets/miniImageNet/resizedminiImages/'
-    resizetargetpath = './DataSets/miniImageNet/resizedminiImages/'
-    csv_file_dir = './data/miniImagenet'
+    resizetargetpath = './'
+    csv_file_dir = './data/'
     def data_loader(csv_file):
         data = pd.read_csv(csv_file, sep=',')
         data = data.filename.tolist()
@@ -45,7 +45,7 @@ def load_miniImageNet():
     return train, val, test
 
 
-class MiniImageNetDataSet(Data):
+class MiniImageNetDataSet():
     def __init__(self, batch_size, classes_per_set=20, samples_per_class=5, seed=2591, shuffle_classes=False):
         '''
         Construct a N-shot MiniImageNet Dataset
@@ -85,8 +85,7 @@ class MiniImageNetDataSet(Data):
 
     def __len__(self):
         return len(self.x_train)
-
-    def 
+ 
     def preprocess_batch(self, x_batch):
         x_batch = (x_batch-self.mean) / self.std
         return x_batch
@@ -124,7 +123,7 @@ class MiniImageNetDataSet(Data):
             target_x[i] = x_temp[choose_label, -1]
             target_y[i] = y_temp[choose_label]
 
-        return support_set_x, support_set_y, target_x, target_y
+        return torch.tensor(support_set_x), torch.tensor(support_set_y), torch.tensor(target_x), torch.tensor(target_y)
 
     def get_batch(self, dataset_name, augment=False):
         """
@@ -158,7 +157,7 @@ class MiniImageNetDataSet(Data):
         x_support_set = self.preprocess_batch(x_support_set)
         x_target = self.preprocess_batch(x_target)
 
-        return x_support_set, y_support_set, x_target, y_target
+        return torch.tensor(x_support_set),torch.tensor( y_support_set),torch.tensor( x_target), torch.tensor(y_target)
 
     def rotate_batch(self, x_batch, axis, k):
         # print(x_batch.shape, axis, k)
