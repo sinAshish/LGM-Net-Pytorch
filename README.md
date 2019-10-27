@@ -8,7 +8,7 @@ In this work, we propose a novel meta-learning approach for few-shot classificat
 
 ### Usage
 
-`python train.py --way 5 --shot 1 --lr 1e-3 --epochs 100 `
+`python train.py --ways 5 --shot 1 --lr 1e-3 --epochs 100 `
 
 ### Acknowledgements
 
@@ -17,8 +17,8 @@ The dataloader is borrowed from the [Author's code](https://github.com/likesiwel
 
 ## ToDo
 - [x] Implement the model
-- [ ] Prepare the dataset
-- [ ] Train the model
+- [x] Prepare the dataset
+- [x] Train the model
 - [ ] Check the results
 
 ```
