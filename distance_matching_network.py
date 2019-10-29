@@ -10,7 +10,7 @@ class DistanceNetwork(nn.Module):
     
     def forward(self, support_set, input_image):
         if self.metric == 'cosine':
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
             support_set = support_set.unsqueeze(1)
             input_image = input_image.unsqueeze(1)
             norm_s = F.normalize(support_set, p=2, dim=2)
@@ -130,6 +130,7 @@ class TaskContextEncoder(nn.Module):
         self.method = method
         
     def forward(self, x):
+        #import pdb; pdb.set_trace()
         bc, kn, c, w, h = x.size()
         x = x.contiguous().view(bc*kn, c, h, w)
         if self.method == 'mean':
@@ -155,6 +156,7 @@ class Classifier(nn.Module):
         """
         Runs the CNN producing the embeddings and the gradients.
         """
+        #import pdb; pdb.set_trace()
         m_conv1, m_conv1_w, m_conv1_b = self.meta_conv1(image_embedding, task_context, 64, 3)
         m_conv1 = F.relu(m_conv1)
         m_conv1 = F.max_pool2d(m_conv1, (2, 2))
@@ -183,8 +185,9 @@ class Extractor(nn.Module):
         self.norm4 = nn.BatchNorm2d(64)
     
     def forward(self, support_target_images):
-        bs, kn, w, h, c = support_target_images.size()
-        support_target_images = support_target_images.view(bs*kn, c, h, w)
+        #import pdb; pdb.set_trace()
+        bs, kn,spc,  h, w,c = support_target_images.size()
+        support_target_images = support_target_images.view(bs*kn*spc, c, h, w)
         #x = self.gconv1(support_target_images)
         x = self.pool1(F.relu(self.norm1(self.gconv1(support_target_images))))
         x = self.pool2(F.relu(self.norm2(self.gconv2(x))))
@@ -192,7 +195,7 @@ class Extractor(nn.Module):
         x = F.relu(self.norm4(self.gconv4(x)))
         bskn, ce, we, he = x.size()
 
-        embeddings = x.view(bs ,kn, ce, we, he)
+        embeddings = x.view(bs ,kn*spc, ce, we, he)
 
         return embeddings
 
@@ -216,7 +219,7 @@ class MetaMatchingNetwork(nn.Module):
         b, num_classes, spc = support_set_labels.size()
 
         support_set_labels_ = support_set_labels.view(b, num_classes * spc)
-        #import pdb; pdb.set_trace()
+        import pdb; pdb.set_trace()
         #support = torch.FloatTensor(b, num_classes*spc)
         #support.zero_()
 
@@ -231,7 +234,7 @@ class MetaMatchingNetwork(nn.Module):
         #merge support set and target set in order to share the feature extractros
         support_target_images = torch.cat([support_set_images_, target_image_], dim=1 )
 
-        support_target_embeddings = self.extractor(support_set_images.squeeze(2))
+        support_target_embeddings = self.extractor(support_set_images)
         #First step: generate task feature representations by using support set features
         task_contexts = self.tce(support_target_embeddings[:, :-1])
 
@@ -254,7 +257,7 @@ class MetaMatchingNetwork(nn.Module):
         #similarities = self.dn(trans_support, trans_target)
         #Produce pdfs over the support set classes fro the target set image.
         softmax_similarities = self.softmax(similarities)
-        softmax_similarities = softmax_similarities[:, :num_classes]
+        softmax_similarities = softmax_similarities[:, :num_classes*spc]
         preds = (softmax_similarities * support_set_labels_).squeeze()
 
         if b == 1:

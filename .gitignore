@@ -1,4 +1,6 @@
 __pycache__/
-data/
 FC100/
+one_shot_outputs/*
+saved_models/*.pth
+/*.csv
 
