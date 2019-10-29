@@ -8,23 +8,25 @@ In this work, we propose a novel meta-learning approach for few-shot classificat
 
 ### Usage
 
-`python train.py --ways 5 --shot 1 --lr 1e-3 --epochs 100 `
-`python train.py --ways 20 --shot 1 --lr 1e-3 --epochs 10`
-`python train.py --ways 5 --shot 5 --lr 1e-3 -e 10`
-`python train.py --ways 20 --shot 5 --lr 1e-2 -e 10`
+```bash 
+python train.py --ways 5 --shot 1 --lr 1e-3 --epochs 100
+python train.py --ways 20 --shot 1 --lr 1e-3 --epochs 10
+python train.py --ways 5 --shot 5 --lr 1e-3 -e 10
+python train.py --ways 20 --shot 5 --lr 1e-2 -e 10
+```
 
 ### Results
 
-The dataset used in this implementation is CIFAR-100 (FC100). I don't have any GPUs, so I had to test my model with a fairly smaller dataset compared to the authors, <br>
+The dataset used in this implementation is `CIFAR-100 (FC100)`. I don't have any GPUs, so I had to test my model with a fairly smaller dataset compared to the authors, <br>
 
-The model performs at par +- 3% with the author's implementation on 5 way 1 shot, 20 way 1 shot, and 5 way 5 shot. I could not test the 20 way 5 shot, because of my laptop's constraints. Loading the dataset on Colab from drive is slower than my laptop. <br>
+The model performs `at par +- 3%` with the author's implementation on `5 way 1 shot`, `20 way 1 shot`, and `5 way 5 shot`. I could not test the `20 way 5 shot`, because of my laptop's constraints. Loading the dataset on Colab from drive is slower than my laptop. <br>
 
 Hope you find this implementation useful.
 
 ### Acknowledgements
 
 The dataloader is borrowed from the [Author's code](https://github.com/likesiwell/LGM-Net/).
-I'll add the dataloader in Pytorch, cause the one by the author's is very slow.For now, the model works fine on MacBook Pro 8GB version.
+I'll add the dataloader in Pytorch, cause the one by the author's is very slow. For now, the model works fine on MacBook Pro 8GB version.
 
 ## ToDo
 - [x] Implement the model
