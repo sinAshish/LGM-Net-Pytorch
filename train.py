@@ -62,36 +62,37 @@ def testing(total_test_batches, data, model, device):
     total_test_loss = 0.
     total_test_accuracy = 0.
     correct = 0.
-    with tqdm(total=total_test_batches) as pbar:
-        for i in range(total_test_batches):
-            x_support_set, y_support_set, x_target, y_target = data.get_test_batch(total_test_batches)
-            x_support_set = Variable(x_support_set).to(device)
-            y_support_set = Variable(y_support_set).to(device)
-            x_target = Variable(x_target).to(device)
-            y_target = Variable(y_target).to(device)
-            preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
+    with torch.no_grad():
+        with tqdm(total=total_test_batches) as pbar:
+            for i in range(total_test_batches):
+                x_support_set, y_support_set, x_target, y_target = data.get_test_batch(total_test_batches)
+                x_support_set = Variable(x_support_set).to(device)
+                y_support_set = Variable(y_support_set).to(device)
+                x_target = Variable(x_target).to(device)
+                y_target = Variable(y_target).to(device)
+                preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
 
-            target_label  = torch.tensor(target_label, dtype= torch.long)
-            #correct_prediction = (torch.argmax(preds, 1) == target_label)
-            _, predicted = torch.max(preds.data, 1)
-            total_val = target_label.size(0)
-            correct += predicted.eq(target_label.data).sum().item()
+                target_label  = torch.tensor(target_label, dtype= torch.long)
+                #correct_prediction = (torch.argmax(preds, 1) == target_label)
+                _, predicted = torch.max(preds.data, 1)
+                total_val = target_label.size(0)
+                correct += predicted.eq(target_label.data).sum().item()
 
-            
-            accuracy = 100 * correct / total_val
-            #targets = target_label.scatter(1, target_label, classes_per_set)
-            targets = F.one_hot(target_label)
+                
+                accuracy = 100 * correct / total_val
+                #targets = target_label.scatter(1, target_label, classes_per_set)
+                targets = F.one_hot(target_label)
 
-            loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
-            total_test_loss += loss.item()
-            total_test_accuracy += accuracy
+                loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
+                total_test_loss += loss.item()
+                total_test_accuracy += accuracy
 
-            iter_out = "test_loss: {:0.5f}, test_accuracy: {:0.5f}".format(loss.item(), accuracy)
-            pbar.set_description(iter_out)
-            pbar.update(1)
+                iter_out = "test_loss: {:0.5f}, test_accuracy: {:0.5f}".format(loss.item(), accuracy)
+                pbar.set_description(iter_out)
+                pbar.update(1)
 
-        total_test_accuracy/= total_test_batches
-        total_test_loss/= total_test_batches
+            total_test_accuracy/= total_test_batches
+            total_test_loss/= total_test_batches
 
     return total_test_loss, total_test_accuracy
 
@@ -99,37 +100,37 @@ def validation(val_batches, data, model, device):
     total_val_loss = 0.
     total_val_accuracy = 0.
     correct=0.
+    with torch.no_grad():
+        with tqdm(total=val_batches) as pbar:
+            for i in range(val_batches):
+                x_support_set, y_support_set, x_target, y_target = data.get_val_batch(val_batches)
+                x_support_set = Variable(x_support_set).to(device)
+                y_support_set = Variable(y_support_set).to(device)
+                x_target = Variable(x_target).to(device)
+                y_target = Variable(y_target).to(device)
+                preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
 
-    with tqdm(total=val_batches) as pbar:
-        for i in range(val_batches):
-            x_support_set, y_support_set, x_target, y_target = data.get_val_batch(val_batches)
-            x_support_set = Variable(x_support_set).to(device)
-            y_support_set = Variable(y_support_set).to(device)
-            x_target = Variable(x_target).to(device)
-            y_target = Variable(y_target).to(device)
-            preds, target_label = model(x_support_set, y_support_set, x_target, y_target)
+                target_label  = torch.tensor(target_label, dtype= torch.long)
+                #correct_prediction = (torch.argmax(preds, 1) == target_label)
+                _, predicted = torch.max(preds.data, 1)
+                total_val = target_label.size(0)
+                correct += predicted.eq(target_label.data).sum().item()
 
-            target_label  = torch.tensor(target_label, dtype= torch.long)
-            #correct_prediction = (torch.argmax(preds, 1) == target_label)
-            _, predicted = torch.max(preds.data, 1)
-            total_val = target_label.size(0)
-            correct += predicted.eq(target_label.data).sum().item()
-
-            accuracy = 100 * correct / total_val
-            #targets = target_label.scatter(1, target_label, classes_per_set)
-            targets = F.one_hot(target_label)
+                accuracy = 100 * correct / total_val
+                #targets = target_label.scatter(1, target_label, classes_per_set)
+                targets = F.one_hot(target_label)
 
 
-            loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
-            total_val_loss += loss.item()
-            total_val_accuracy += accuracy
+                loss = F.cross_entropy(preds, torch.max(targets.float(), 1)[1])
+                total_val_loss += loss.item()
+                total_val_accuracy += accuracy
 
-            iter_out = "val_loss: {:0.5f}, val_accuracy: {:0.5f}".format(loss.item(), accuracy)
-            pbar.set_description(iter_out)
-            pbar.update(1)
+                iter_out = "val_loss: {:0.5f}, val_accuracy: {:0.5f}".format(loss.item(), accuracy)
+                pbar.set_description(iter_out)
+                pbar.update(1)
 
-        total_val_loss /= val_batches
-        total_val_accuracy /= val_batches
+            total_val_loss /= val_batches
+            total_val_accuracy /= val_batches
 
     return total_val_loss, total_val_accuracy
 
